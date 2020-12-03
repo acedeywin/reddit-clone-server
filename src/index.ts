@@ -1,17 +1,31 @@
 import { MikroORM } from "@mikro-orm/core"
 import { __prod__ } from "./constants"
-import { Post } from "./entities/Post"
+//import { Post } from "./entities/Post"
 import microConfig from "./mikro-orm.config"
+import express from "express"
+import { ApolloServer } from "apollo-server-express"
+import { buildSchema } from "type-graphql"
+import { HelloResolver } from "./resolvers/hello"
 
 const main = async () => {
   const orm = await MikroORM.init(microConfig)
   await orm.getMigrator().up()
 
-  const post = orm.em.create(Post, { title: "Making good happen!" })
-  await orm.em.persistAndFlush(post)
+  const app = express(),
+    PORT = process.env.PORT || 4500
 
-  const posts = await orm.em.find(Post, {})
-  console.log(posts)
+  const apolloServer = new ApolloServer({
+    schema: await buildSchema({
+      resolvers: [HelloResolver],
+      validate: false,
+    }),
+  })
+
+  apolloServer.applyMiddleware({ app })
+
+  app.listen(PORT, () => {
+    console.log(`Server started on localhost ${PORT}`)
+  })
 }
 
 main().catch(err => {
