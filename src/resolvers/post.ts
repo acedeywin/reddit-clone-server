@@ -4,16 +4,17 @@ import { Resolver, Query, Ctx, Arg, Mutation } from "type-graphql"
 
 @Resolver()
 export class PostResolver {
+  //query for getting all valid post
   @Query(() => [Post])
   posts(@Ctx() { em }: MyContext): Promise<Post[]> {
     return em.find(Post, {})
   }
-
+  //query for getting a single post by id
   @Query(() => Post, { nullable: true })
   post(@Arg("id") id: number, @Ctx() { em }: MyContext): Promise<Post | null> {
     return em.findOne(Post, { id })
   }
-
+  //mutation for creating a post
   @Mutation(() => Post)
   async createPost(
     @Arg("title") title: string,
@@ -23,7 +24,7 @@ export class PostResolver {
     await em.persistAndFlush(post)
     return post
   }
-
+  //mutation for updating a post
   @Mutation(() => Post, { nullable: true })
   async updatePost(
     @Arg("id") id: number,
@@ -40,7 +41,7 @@ export class PostResolver {
     }
     return post
   }
-
+  //mutation for deleting a post
   @Mutation(() => Boolean)
   async deletePost(
     @Arg("id") id: number,
