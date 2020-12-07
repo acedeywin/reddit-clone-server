@@ -2,7 +2,8 @@ import { MyContext, UsernamePasswordInput, UserResponse } from "../types"
 import { Resolver, Query, Mutation, Arg, Ctx } from "type-graphql"
 import { User } from "../entities/User"
 import argon2 from "argon2"
-import { EntityManager } from "@mikro-orm/postgresql"
+import { COOKIE_NAME } from "../constants"
+//import { EntityManager } from "@mikro-orm/postgresql"
 
 @Resolver()
 export class UserResolver {
@@ -53,19 +54,12 @@ export class UserResolver {
       }
     }
     const hashedPassword = await argon2.hash(options.password)
-    let user
+    const user = em.create(User, {
+      username: options.username,
+      password: hashedPassword,
+    })
     try {
-      const [result] = await (em as EntityManager)
-        .createQueryBuilder(User)
-        .getKnexQuery()
-        .insert({
-          username: options.username,
-          password: hashedPassword,
-          created_at: new Date(),
-          updated_at: new Date(),
-        })
-        .returning("*")
-      user = result[0]
+      await em.persistAndFlush(user)
     } catch (err) {
       //err.detail.includes("already exists")
       if (err.code === "23505") {
@@ -115,5 +109,20 @@ export class UserResolver {
     req.session.userId = user.id
 
     return { user }
+  }
+  //mutation for logout
+  @Mutation(() => Boolean)
+  logout(@Ctx() { req, res }: MyContext) {
+    return new Promise(resolve => {
+      req.session.destroy((err: any) => {
+        res.clearCookie(COOKIE_NAME)
+        if (err) {
+          console.log(err)
+          resolve(false)
+          return
+        }
+        resolve(true)
+      })
+    })
   }
 }
