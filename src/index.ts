@@ -4,9 +4,11 @@ import express from "express"
 import { ApolloServer } from "apollo-server-express"
 import { buildSchema } from "type-graphql"
 import redis from "redis"
-import session from "express-session"
 import connectRedis from "connect-redis"
+import session from "express-session"
 import cors from "cors"
+// import KnexSessionStore from "connect-session-knex"
+// import Knex from "knex"
 
 import microConfig from "./mikro-orm.config"
 import { __prod__ } from "./constants"
@@ -21,17 +23,48 @@ const main = async () => {
 
   const app = express(),
     PORT = process.env.PORT || 4500,
+    // knexStore = KnexSessionStore(session)
+
     RedisStore = connectRedis(session),
     redisClient = redis.createClient()
 
   app.use(cors({ origin: "http://localhost:3000", credentials: true }))
 
+  // const knex = Knex({
+  //   client: "pg",
+  //   connection: {
+  //     host: "127.0.0.1",
+  //     user: "postgres",
+  //     password: "12345",
+  //     database: "redditdb",
+  //   },
+  // })
+
+  // const store = new knexStore({
+  //   knex,
+  //   tablename: "sessions",
+  // })
+
+  // app.use(
+  //   session({
+  //     name: "ace",
+  //     secret: "acedeywin12345@!",
+  //     cookie: {
+  //       maxAge: 1000 * 60 * 60 * 24 * 365 * 5, //5 years
+  //     },
+  //     store,
+  //     saveUninitialized: false,
+  //     resave: false,
+  //   })
+  // )
+
   app.use(
     session({
       name: "qid",
+      secret: "acedeywin12345@!",
       store: new RedisStore({
         client: redisClient,
-        disableTouch: true,
+        ttl: 260,
       }),
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 5, //5 years
@@ -40,7 +73,6 @@ const main = async () => {
         secure: __prod__, //cookie only work is https
       },
       saveUninitialized: false,
-      secret: "acedeywin12345@!",
       resave: false,
     })
   )
