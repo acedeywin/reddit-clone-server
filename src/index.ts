@@ -51,6 +51,9 @@ const main = async () => {
       secret: "acedeywin12345@!",
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 5, //5 years
+        httpOnly: true,
+        sameSite: "lax",
+        // secure: __prod__,
       },
       store,
       saveUninitialized: false,
