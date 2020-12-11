@@ -1,4 +1,3 @@
-import { MikroORM } from "@mikro-orm/core"
 import "reflect-metadata"
 import express from "express"
 import { ApolloServer } from "apollo-server-express"
@@ -7,20 +6,31 @@ import Redis from "ioredis"
 import connectRedis from "connect-redis"
 import session from "express-session"
 import cors from "cors"
+import { createConnection } from "typeorm"
+import path from "path"
 // import KnexSessionStore from "connect-session-knex"
 // import Knex from "knex"
 
-import microConfig from "./mikro-orm.config"
 import { COOKIE_NAME, __prod__ } from "./constants"
 import { HelloResolver } from "./resolvers/hello"
 import { PostResolver } from "./resolvers/post"
 import { UserResolver } from "./resolvers/user"
-import { MyContext } from "./types"
-//import { sendEmail } from "./utils/sendEmail"
+import { User } from "./entities/User"
+import { Post } from "./entities/Post"
 
 const main = async () => {
-  const orm = await MikroORM.init(microConfig)
-  await orm.getMigrator().up()
+  const connection = await createConnection({
+    type: "postgres",
+    username: "postgres",
+    password: "12345",
+    database: "redditdb2",
+    synchronize: true,
+    logging: true,
+    migrations: [path.join(__dirname, "./migrations/*")],
+    entities: [Post, User],
+  })
+
+  await connection.runMigrations()
 
   const app = express(),
     PORT = process.env.PORT || 4500,
@@ -86,7 +96,7 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }): MyContext => ({ em: orm.em, req, res, redis }),
+    context: ({ req, res }) => ({ req, res, redis }),
   })
 
   apolloServer.applyMiddleware({
