@@ -30,6 +30,8 @@ const main = async () => {
     entities: [Post, User],
   })
 
+  //await Post.delete({})
+
   await connection.runMigrations()
 
   const app = express(),
