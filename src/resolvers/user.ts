@@ -6,36 +6,35 @@ import { COOKIE_NAME, FORGET_PW_PREFIX } from "../constants"
 import { validRegister } from "../utils/validateRegister"
 import { sendEmail } from "../utils/sendEmail"
 import { v4 } from "uuid"
-//import { EntityManager } from "@mikro-orm/postgresql"
+import { getConnection } from "typeorm"
 
 @Resolver()
 export class UserResolver {
   //query for getting all valid users
   @Query(() => [User])
-  users(@Ctx() { em }: MyContext): Promise<User[]> {
-    return em.find(User, {})
+  users(): Promise<User[]> {
+    return User.find()
   }
   //query for getting a single user by id
   @Query(() => User, { nullable: true })
-  user(@Arg("id") id: number, @Ctx() { em }: MyContext): Promise<User | null> {
-    return em.findOne(User, { id })
+  user(@Arg("id") id: number): Promise<User | undefined> {
+    return User.findOne(id)
   }
   //for a current logged in user
   @Query(() => User, { nullable: true })
-  async me(@Ctx() { req, em }: MyContext) {
+  me(@Ctx() { req }: MyContext) {
     //you are not logged in
     if (!req.session.userId) {
       return null
     }
-    const user = await em.findOne(User, { id: req.session.userId })
-    return user
+    return User.findOne(req.session.userId)
   }
   //change password mutation
   @Mutation(() => UserResponse)
   async changePassword(
     @Arg("token") token: string,
     @Arg("newPassword") newPassword: string,
-    @Ctx() { redis, em, req }: MyContext
+    @Ctx() { redis, req }: MyContext
   ): Promise<UserResponse> {
     if (newPassword.length <= 4) {
       return {
@@ -60,7 +59,8 @@ export class UserResolver {
         ],
       }
     }
-    const user = await em.findOne(User, { id: parseInt(userId) })
+    const userIdNum = parseInt(userId),
+      user = await User.findOne(userIdNum)
 
     if (!user) {
       return {
@@ -72,8 +72,11 @@ export class UserResolver {
         ],
       }
     }
-    user.password = await argon2.hash(newPassword)
-    await em.persistAndFlush(user)
+
+    await User.update(
+      { id: userIdNum },
+      { password: await argon2.hash(newPassword) }
+    )
 
     //delete the token after password has been changed
     await redis.del(key)
@@ -88,9 +91,9 @@ export class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg("email") email: string,
-    @Ctx() { em, redis }: MyContext
+    @Ctx() { redis }: MyContext
   ) {
-    const user = await em.findOne(User, { email })
+    const user = await User.findOne({ where: { email } })
 
     if (!user) {
       return true
@@ -116,20 +119,30 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async register(
     @Arg("options") options: UsernamePasswordInput,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
     const errors = validRegister(options)
 
     if (errors) return { errors }
 
     const hashedPassword = await argon2.hash(options.password)
-    const user = em.create(User, {
-      username: options.username,
-      email: options.email,
-      password: hashedPassword,
-    })
+    let user
+
     try {
-      await em.persistAndFlush(user)
+      //User.create({}).save()
+      const result = await getConnection()
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
+          username: options.username,
+          email: options.email,
+          password: hashedPassword,
+        })
+        .returning("*")
+        .execute()
+
+      user = result.raw[0]
     } catch (err) {
       //err.detail.includes("already exists")
       if (err.code === "23505") {
@@ -152,13 +165,12 @@ export class UserResolver {
   async login(
     @Arg("usernameOrEmail") usernameOrEmail: string,
     @Arg("password") password: string,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
-    const user = await em.findOne(
-      User,
+    const user = await User.findOne(
       usernameOrEmail.includes("@")
-        ? { email: usernameOrEmail }
-        : { username: usernameOrEmail }
+        ? { where: { email: usernameOrEmail } }
+        : { where: { username: usernameOrEmail } }
     )
     if (!user) {
       return {
