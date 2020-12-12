@@ -39,9 +39,6 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         migrations: [path_1.default.join(__dirname, "./migrations/*")],
         entities: [Post_1.Post, User_1.User],
     });
-    yield Post_1.Post.delete({});
-    yield User_1.User.delete({});
-    yield connection.runMigrations();
     const app = express_1.default(), PORT = process.env.PORT || 4500, RedisStore = connect_redis_1.default(express_session_1.default), redis = new ioredis_1.default();
     app.use(cors_1.default({ origin: "http://localhost:3000", credentials: true }));
     app.use(express_session_1.default({
