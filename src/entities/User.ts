@@ -13,7 +13,7 @@ import { Post } from "./Post"
 @ObjectType()
 @Entity()
 export class User extends BaseEntity {
-  @Field(() => ID)
+  @Field()
   @PrimaryGeneratedColumn()
   id!: number
 
