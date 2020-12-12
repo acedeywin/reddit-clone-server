@@ -32,7 +32,7 @@ const main = async () => {
 
   //await Post.delete({})
 
-  await connection.runMigrations()
+  //await connection.runMigrations()
 
   const app = express(),
     PORT = process.env.PORT || 4500,
