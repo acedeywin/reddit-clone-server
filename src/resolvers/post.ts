@@ -11,6 +11,7 @@ import {
   Int,
   FieldResolver,
   Root,
+  ObjectType,
 } from "type-graphql"
 import { MyContext } from "src/types"
 import { isAuth } from "../middleware/isAuth"
@@ -24,6 +25,14 @@ class PostInput {
   text: string
 }
 
+@ObjectType()
+class PaginatedPosts {
+  @Field(() => [Post])
+  posts: Post[]
+  @Field()
+  hasMore: boolean
+}
+
 @Resolver(Post)
 export class PostResolver {
   //Field resolver for the posts
@@ -33,26 +42,31 @@ export class PostResolver {
   }
 
   //query for getting all valid post
-  @Query(() => [Post])
-  posts(
+  @Query(() => PaginatedPosts)
+  async posts(
     @Arg("limit", () => Int) limit: number,
     @Arg("cursor", () => String, { nullable: true }) cursor: string | null
-  ): Promise<Post[]> {
-    const realLimit = Math.min(30, limit)
+  ): Promise<PaginatedPosts> {
+    const realLimit = Math.min(30, limit),
+      realLimitPlusOne = realLimit + 1
 
     const queryBuilder = getConnection()
       .getRepository(Post)
       .createQueryBuilder("p")
       .orderBy('"createdAt"', "DESC")
-      .take(realLimit)
+      .take(realLimitPlusOne)
 
     if (cursor) {
       queryBuilder.where('"createdAt" < :cursor', {
         cursor: new Date(parseInt(cursor)),
       })
     }
+    const posts = await queryBuilder.getMany()
 
-    return queryBuilder.getMany()
+    return {
+      posts: posts.slice(0, realLimit),
+      hasMore: posts.length === realLimitPlusOne,
+    }
   }
   //query for getting a single post by id
   @Query(() => Post, { nullable: true })
