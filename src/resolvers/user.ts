@@ -1,5 +1,13 @@
 import { MyContext, UsernamePasswordInput, UserResponse } from "../types"
-import { Resolver, Query, Mutation, Arg, Ctx } from "type-graphql"
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Arg,
+  Ctx,
+  FieldResolver,
+  Root,
+} from "type-graphql"
 import { User } from "../entities/User"
 import argon2 from "argon2"
 import { COOKIE_NAME, FORGET_PW_PREFIX } from "../constants"
@@ -8,7 +16,7 @@ import { sendEmail } from "../utils/sendEmail"
 import { v4 } from "uuid"
 import { getConnection } from "typeorm"
 
-@Resolver()
+@Resolver(User)
 export class UserResolver {
   //query for getting all valid users
   @Query(() => [User])
@@ -29,6 +37,17 @@ export class UserResolver {
     }
     return User.findOne(req.session.userId)
   }
+  //Resolver to give permission to email of only a logged in user
+  @FieldResolver(() => String)
+  email(@Root() user: User, @Ctx() { req }: MyContext) {
+    //this is a current user and post creator, it's ok to show them their own email
+    if (req.session.userId === user.id) {
+      return user.email
+    }
+    //this is not the post crreator, hide email from user
+    return ""
+  }
+
   //change password mutation
   @Mutation(() => UserResponse)
   async changePassword(
