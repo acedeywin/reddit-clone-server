@@ -17,6 +17,8 @@ import { PostResolver } from "./resolvers/post"
 import { UserResolver } from "./resolvers/user"
 import { User } from "./entities/User"
 import { Post } from "./entities/Post"
+import { VoteResolver } from "./resolvers/vote"
+import { Vote } from "./entities/Vote"
 
 const main = async () => {
   const connection = await createConnection({
@@ -27,7 +29,7 @@ const main = async () => {
     synchronize: true,
     logging: true,
     migrations: [path.join(__dirname, "./migrations/*")],
-    entities: [Post, User],
+    entities: [Post, User, Vote],
   })
 
   //await Post.delete({})
@@ -95,7 +97,7 @@ const main = async () => {
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [HelloResolver, PostResolver, UserResolver],
+      resolvers: [HelloResolver, PostResolver, UserResolver, VoteResolver],
       validate: false,
     }),
     context: ({ req, res }) => ({ req, res, redis }),

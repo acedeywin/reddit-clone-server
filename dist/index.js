@@ -28,6 +28,8 @@ const post_1 = require("./resolvers/post");
 const user_1 = require("./resolvers/user");
 const User_1 = require("./entities/User");
 const Post_1 = require("./entities/Post");
+const vote_1 = require("./resolvers/vote");
+const Vote_1 = require("./entities/Vote");
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const connection = yield typeorm_1.createConnection({
         type: "postgres",
@@ -37,7 +39,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         synchronize: true,
         logging: true,
         migrations: [path_1.default.join(__dirname, "./migrations/*")],
-        entities: [Post_1.Post, User_1.User],
+        entities: [Post_1.Post, User_1.User, Vote_1.Vote],
     });
     const app = express_1.default(), PORT = process.env.PORT || 4500, RedisStore = connect_redis_1.default(express_session_1.default), redis = new ioredis_1.default();
     app.use(cors_1.default({ origin: "http://localhost:3000", credentials: true }));
@@ -58,7 +60,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     }));
     const apolloServer = new apollo_server_express_1.ApolloServer({
         schema: yield type_graphql_1.buildSchema({
-            resolvers: [hello_1.HelloResolver, post_1.PostResolver, user_1.UserResolver],
+            resolvers: [hello_1.HelloResolver, post_1.PostResolver, user_1.UserResolver, vote_1.VoteResolver],
             validate: false,
         }),
         context: ({ req, res }) => ({ req, res, redis }),
