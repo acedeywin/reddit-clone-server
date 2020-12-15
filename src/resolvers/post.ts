@@ -123,18 +123,25 @@ export class PostResolver {
   }
   //mutation for updating a post
   @Mutation(() => Post, { nullable: true })
+  @UseMiddleware(isAuth)
   async updatePost(
-    @Arg("id") id: number,
-    @Arg("title", () => String, { nullable: true }) title: string
+    @Arg("id", () => Int) id: number,
+    @Arg("title") title: string,
+    @Arg("text") text: string,
+    @Ctx() { req }: MyContext
   ): Promise<Post | null> {
-    const post = await Post.findOne(id)
-    if (!post) {
-      return null
-    }
-    if (typeof title !== "undefined") {
-      await Post.update({ id }, { title })
-    }
-    return post
+    const post = await getConnection()
+      .createQueryBuilder()
+      .update(Post)
+      .set({ title, text })
+      .where('id = :id and "creatorId" = :creatorId', {
+        id,
+        creatorId: req.session.userId,
+      })
+      .returning("*")
+      .execute()
+
+    return post.raw[0]
   }
   //mutation for deleting a post
   @Mutation(() => Boolean)
