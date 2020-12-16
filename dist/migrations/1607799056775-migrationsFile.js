@@ -1,19 +1,9 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.migrationsFile1607799056775 = void 0;
 class migrationsFile1607799056775 {
-    up(queryRunner) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield queryRunner.query(`
+    async up(queryRunner) {
+        await queryRunner.query(`
         insert into post (title, text, "creatorId") values ('Cass', 'Praesent id massa id nisl venenatis lacinia. Aenean sit amet justo. Morbi ut odio.
 
 Cras mi pede, malesuada in, imperdiet et, commodo vulputate, justo. In blandit ultrices enim. Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
@@ -324,11 +314,8 @@ insert into post (title, text, "creatorId") values ('Suspect, The', 'Donec diam 
 Duis bibendum. Morbi non quam nec dui luctus rutrum. Nulla tellus.', 1);
 
         `);
-        });
     }
-    down(queryRunner) {
-        return __awaiter(this, void 0, void 0, function* () { });
-    }
+    async down(queryRunner) { }
 }
 exports.migrationsFile1607799056775 = migrationsFile1607799056775;
 //# sourceMappingURL=1607799056775-migrationsFile.js.map

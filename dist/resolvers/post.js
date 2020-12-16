@@ -11,15 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostResolver = void 0;
 const Post_1 = require("../entities/Post");
@@ -27,6 +18,7 @@ const type_graphql_1 = require("type-graphql");
 const isAuth_1 = require("../middleware/isAuth");
 const typeorm_1 = require("typeorm");
 const Vote_1 = require("../entities/Vote");
+const User_1 = require("../entities/User");
 let PostInput = class PostInput {
 };
 __decorate([
@@ -54,81 +46,67 @@ PaginatedPosts = __decorate([
     type_graphql_1.ObjectType()
 ], PaginatedPosts);
 let PostResolver = class PostResolver {
-    textSnippet(root) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return root.text.slice(0, 80);
-        });
+    async textSnippet(root) {
+        return root.text.slice(0, 80);
     }
-    posts(limit, cursor, { req }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const realLimit = Math.min(30, limit), realLimitPlusOne = realLimit + 1;
-            const replacements = [realLimitPlusOne, req.session.userId];
-            if (cursor) {
-                replacements.push(new Date(parseInt(cursor)));
-            }
-            const posts = yield typeorm_1.getConnection().query(`
+    creator(post, { userLoader }) {
+        return userLoader.load(post.creatorId);
+    }
+    async posts(limit, cursor, { req }) {
+        const realLimit = Math.min(30, limit), realLimitPlusOne = realLimit + 1;
+        const replacements = [realLimitPlusOne, req.session.userId];
+        if (cursor) {
+            replacements.push(new Date(parseInt(cursor)));
+        }
+        const posts = await typeorm_1.getConnection().query(`
 
     select p.*,
-    json_build_object(
-      'id', u.id,
-      'username', u.username,
-      'email', u.email,
-      'createdAt', u."createdAt",
-      'updatedAt', u."updatedAt"
-    ) creator,
-    ${req.session.userId
-                ? ' (select value from vote where "userId" = $2 and "postId" = p.id) "voteStatus"'
-                : "null as voteStatus"}
+
     from post p
 
-    inner join public.user u on u.id = p."creatorId"
-    ${cursor ? `where p."createdAt" < $3` : ""}
+    ${cursor ? `where p."createdAt" < $2` : ""}
     order by p."createdAt" DESC
     limit $1
 
     `, replacements);
-            return {
-                posts: posts.slice(0, realLimit),
-                hasMore: posts.length === realLimitPlusOne,
-            };
-        });
+        return {
+            posts: posts.slice(0, realLimit),
+            hasMore: posts.length === realLimitPlusOne,
+        };
     }
     post(id) {
         return Post_1.Post.findOne(id, { relations: ["creator"] });
     }
-    createPost(input, { req }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return Post_1.Post.create(Object.assign(Object.assign({}, input), { creatorId: req.session.userId })).save();
-        });
+    async createPost(input, { req }) {
+        return Post_1.Post.create({
+            ...input,
+            creatorId: req.session.userId,
+        }).save();
     }
-    updatePost(id, title, text, { req }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const post = yield typeorm_1.getConnection()
-                .createQueryBuilder()
-                .update(Post_1.Post)
-                .set({ title, text })
-                .where('id = :id and "creatorId" = :creatorId', {
-                id,
-                creatorId: req.session.userId,
-            })
-                .returning("*")
-                .execute();
-            return post.raw[0];
-        });
+    async updatePost(id, title, text, { req }) {
+        const post = await typeorm_1.getConnection()
+            .createQueryBuilder()
+            .update(Post_1.Post)
+            .set({ title, text })
+            .where('id = :id and "creatorId" = :creatorId', {
+            id,
+            creatorId: req.session.userId,
+        })
+            .returning("*")
+            .execute();
+        return post.raw[0];
     }
-    deletePost(id, { req }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const post = yield Post_1.Post.findOne(id);
-            if (!post) {
-                return false;
-            }
-            if (post.creatorId !== req.session.userId) {
-                throw new Error("Your are not authorized to delete this post");
-            }
-            yield Vote_1.Vote.delete({ postId: id });
-            yield Post_1.Post.delete({ id });
-            return true;
-        });
+    async deletePost(id, { req }) {
+        const post = await Post_1.Post.findOne(id);
+        if (!post) {
+            return false;
+        }
+        if (post.creatorId !== req.session.userId) {
+            throw new Error("Your are not authorized to delete this post");
+        }
+        await Vote_1.Vote.delete({ postId: id });
+        await Post_1.Post.delete({ id });
+        return true;
     }
 };
 __decorate([
@@ -138,6 +116,13 @@ __decorate([
     __metadata("design:paramtypes", [Post_1.Post]),
     __metadata("design:returntype", Promise)
 ], PostResolver.prototype, "textSnippet", null);
+__decorate([
+    type_graphql_1.FieldResolver(() => User_1.User),
+    __param(0, type_graphql_1.Root()), __param(1, type_graphql_1.Ctx()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Post_1.Post, Object]),
+    __metadata("design:returntype", void 0)
+], PostResolver.prototype, "creator", null);
 __decorate([
     type_graphql_1.Query(() => PaginatedPosts),
     __param(0, type_graphql_1.Arg("limit", () => type_graphql_1.Int)),

@@ -8,8 +8,6 @@ import session from "express-session"
 import cors from "cors"
 import { createConnection } from "typeorm"
 import path from "path"
-// import KnexSessionStore from "connect-session-knex"
-// import Knex from "knex"
 
 import { COOKIE_NAME, __prod__ } from "./constants"
 import { HelloResolver } from "./resolvers/hello"
@@ -19,6 +17,7 @@ import { User } from "./entities/User"
 import { Post } from "./entities/Post"
 import { VoteResolver } from "./resolvers/vote"
 import { Vote } from "./entities/Vote"
+import { createUserLoader } from "./utils/createLoader"
 
 const main = async () => {
   const connection = await createConnection({
@@ -32,49 +31,12 @@ const main = async () => {
     entities: [Post, User, Vote],
   })
 
-  //await Post.delete({})
-
-  //await connection.runMigrations()
-
   const app = express(),
     PORT = process.env.PORT || 4500,
-    // knexStore = KnexSessionStore(session)
-
     RedisStore = connectRedis(session),
     redis = new Redis()
 
   app.use(cors({ origin: "http://localhost:3000", credentials: true }))
-
-  // const knex = Knex({
-  //   client: "pg",
-  //   connection: {
-  //     host: "127.0.0.1",
-  //     user: "postgres",
-  //     password: "12345",
-  //     database: "redditdb",
-  //   },
-  // })
-
-  // const store = new knexStore({
-  //   knex,
-  //   tablename: "sessions",
-  // })
-
-  // app.use(
-  //   session({
-  //     name: COOKIE_NAME,
-  //     secret: "acedeywin12345@!",
-  //     cookie: {
-  //       maxAge: 1000 * 60 * 60 * 24 * 365 * 5, //5 years
-  //       httpOnly: true,
-  //       sameSite: "lax",
-  //       // secure: __prod__,
-  //     },
-  //     store,
-  //     saveUninitialized: false,
-  //     resave: false,
-  //   })
-  // )
 
   app.use(
     session({
@@ -100,7 +62,12 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver, VoteResolver],
       validate: false,
     }),
-    context: ({ req, res }) => ({ req, res, redis }),
+    context: ({ req, res }) => ({
+      req,
+      res,
+      redis,
+      userLoader: createUserLoader(),
+    }),
   })
 
   apolloServer.applyMiddleware({

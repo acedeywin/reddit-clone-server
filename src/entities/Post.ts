@@ -10,7 +10,6 @@ import {
   UpdateDateColumn,
 } from "typeorm"
 import { User } from "./User"
-import { Vote } from "./Vote"
 
 @ObjectType()
 @Entity()
