@@ -5,8 +5,6 @@ Reddit Clone App API
 This is the backend of a Reddit-clonnish app that allows authenticated
 users to add, vote, edit, and delete posts.
 
-# HOW TO USE
-
 Clone the repo
 
 Run yarn install
