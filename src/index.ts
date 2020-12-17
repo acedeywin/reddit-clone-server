@@ -54,8 +54,8 @@ const main = async () => {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 5, //5 years
         httpOnly: true,
         sameSite: "lax", //related to protecting its csrf
-        secure: __prod__, //cookie only work is https
-        domain: __prod__ ? ".herokuapp.com" : undefined,
+        //secure: __prod__, //cookie only work is https
+        //domain: __prod__ ? ".herokuapp.com" : undefined,
       },
       saveUninitialized: false,
       resave: false,
