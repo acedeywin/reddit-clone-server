@@ -3,6 +3,7 @@ CREATE TABLE post(
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     title UNIQUE NOT NULL,
+);
 
 CREATE TABLE user(
         id SERIAL PRIMARY KEY NOT NULL,
