@@ -1,4 +1,5 @@
 import "reflect-metadata"
+import dotenv from "dotenv-safe"
 import express from "express"
 import { ApolloServer } from "apollo-server-express"
 import { buildSchema } from "type-graphql"
@@ -19,13 +20,15 @@ import { VoteResolver } from "./resolvers/vote"
 import { Vote } from "./entities/Vote"
 import { createUserLoader } from "./utils/createLoader"
 
+dotenv.config()
+
 const main = async () => {
   const connection = await createConnection({
     type: "postgres",
-    username: "postgres",
-    password: "12345",
-    database: "redditdb2",
-    synchronize: true,
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB,
+    //synchronize: true,
     logging: true,
     migrations: [path.join(__dirname, "./migrations/*")],
     entities: [Post, User, Vote],
@@ -34,14 +37,15 @@ const main = async () => {
   const app = express(),
     PORT = process.env.PORT || 4500,
     RedisStore = connectRedis(session),
-    redis = new Redis()
+    redis = new Redis(process.env.REDIS_URL)
 
-  app.use(cors({ origin: "http://localhost:3000", credentials: true }))
+  app.set("proxy", 1)
+  app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }))
 
   app.use(
     session({
       name: COOKIE_NAME,
-      secret: "acedeywin12345@!",
+      secret: process.env.SESSION_SECRET as any,
       store: new RedisStore({
         client: redis,
         ttl: 260,
@@ -50,7 +54,8 @@ const main = async () => {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 5, //5 years
         httpOnly: true,
         sameSite: "lax", //related to protecting its csrf
-        //secure: __prod__, //cookie only work is https
+        secure: __prod__, //cookie only work is https
+        domain: __prod__ ? ".herokuapp.com" : undefined,
       },
       saveUninitialized: false,
       resave: false,

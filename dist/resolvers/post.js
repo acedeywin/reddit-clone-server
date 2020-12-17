@@ -54,17 +54,15 @@ let PostResolver = class PostResolver {
     }
     async posts(limit, cursor, { req }) {
         const realLimit = Math.min(30, limit), realLimitPlusOne = realLimit + 1;
-        const replacements = [realLimitPlusOne, req.session.userId];
+        const replacements = [realLimitPlusOne];
         if (cursor) {
             replacements.push(new Date(parseInt(cursor)));
         }
         const posts = await typeorm_1.getConnection().query(`
-
-    select p.*,
-
+    select p.*
     from post p
 
-    ${cursor ? `where p."createdAt" < $2` : ""}
+    ${cursor ? `where p."createdAt" < $3` : ""}
     order by p."createdAt" DESC
     limit $1
 
