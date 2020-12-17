@@ -113,12 +113,22 @@ let UserResolver = class UserResolver {
             user = result.raw[0];
         }
         catch (err) {
-            if (err.code === "23505") {
+            if (err.detail.includes("username")) {
                 return {
                     errors: [
                         {
                             field: "username",
                             message: `The username is already taken`,
+                        },
+                    ],
+                };
+            }
+            else if (err.detail.includes("email")) {
+                return {
+                    errors: [
+                        {
+                            field: "email",
+                            message: `The email is already taken`,
                         },
                     ],
                 };

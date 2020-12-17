@@ -48,8 +48,6 @@ const main = async () => {
             maxAge: 1000 * 60 * 60 * 24 * 365 * 5,
             httpOnly: true,
             sameSite: "lax",
-            secure: constants_1.__prod__,
-            domain: constants_1.__prod__ ? ".herokuapp.com" : undefined,
         },
         saveUninitialized: false,
         resave: false,
