@@ -17,17 +17,7 @@ const isAuth_1 = require("../middleware/isAuth");
 const type_graphql_1 = require("type-graphql");
 const typeorm_1 = require("typeorm");
 const Vote_1 = require("../entities/Vote");
-const Post_1 = require("../entities/Post");
 let VoteResolver = class VoteResolver {
-    async voteStatus(post, { voteLoader, req }) {
-        if (!req.session.userId)
-            return null;
-        const vote = await voteLoader.load({
-            postId: post.id,
-            userId: req.session.userId,
-        });
-        return vote ? vote.value : null;
-    }
     async vote(postId, value, { req }) {
         const { userId } = req.session, isVote = value !== -1, realValue = isVote ? 1 : -1, vote = await Vote_1.Vote.findOne({ where: { postId, userId } });
         if (vote && vote.value !== realValue) {
@@ -40,27 +30,16 @@ let VoteResolver = class VoteResolver {
             });
         }
         else if (!vote) {
-            await typeorm_1.getConnection().transaction(async (tm) => {
-                await tm.query(`
-          insert into vote ("userId", "postId", value)
-          values ($1, $2, $3)
-        `, [userId, postId, realValue]);
-                await tm.query(`update post set points = points + $1 where id = $2`, [
-                    realValue,
-                    postId,
-                ]);
+            await Vote_1.Vote.insert({
+                userId,
+                postId,
+                value: realValue,
             });
+            await typeorm_1.getConnection().query(`update post set points = points + $1 where id = $2`, [realValue, postId]);
         }
         return true;
     }
 };
-__decorate([
-    type_graphql_1.FieldResolver(() => type_graphql_1.Int, { nullable: true }),
-    __param(0, type_graphql_1.Root()), __param(1, type_graphql_1.Ctx()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Post_1.Post, Object]),
-    __metadata("design:returntype", Promise)
-], VoteResolver.prototype, "voteStatus", null);
 __decorate([
     type_graphql_1.UseMiddleware(isAuth_1.isAuth),
     type_graphql_1.Mutation(() => Boolean),

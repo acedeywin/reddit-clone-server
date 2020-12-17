@@ -7,12 +7,12 @@ exports.sendEmail = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 async function sendEmail(to, html) {
     let transporter = nodemailer_1.default.createTransport({
-        host: "smtp.ethereal.email",
+        host: process.env.EMAIL_HOST,
         port: 587,
         secure: false,
         auth: {
-            user: "hhl7clwj52uutcbo@ethereal.email",
-            pass: "U7XPd8kVSMdc8uEDdt",
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
         },
     });
     let info = await transporter.sendMail({

@@ -89,7 +89,7 @@ let UserResolver = class UserResolver {
         }
         const token = uuid_1.v4();
         await redis.set(constants_1.FORGET_PW_PREFIX + token, user.id, "ex", 1000 * 60 * 60 * 24 * 3);
-        await sendEmail_1.sendEmail(email, `<a href="http://localhost:3000/change-password/${token}">reset password</a>`);
+        await sendEmail_1.sendEmail(email, `<a href="${process.env.SEND_EMAIL}/change-password/${token}">reset password</a>`);
         return true;
     }
     async register(options, { req }) {
