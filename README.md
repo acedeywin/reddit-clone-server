@@ -3,7 +3,7 @@
 Reddit Clone App API
 
 This is the backend of a Reddit-clonnish app that allows authenticated
-users to app, vote, edit, and delete posts.
+users to add, vote, edit, and delete posts.
 
 # HOW TO USE
 
