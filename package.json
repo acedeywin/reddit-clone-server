@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "engines": {
+    "node": "14.x"
+  },
   "scripts": {
     "env": "gen-env-types .env -o src/env.d.ts -e .",
     "build": "tsc",
