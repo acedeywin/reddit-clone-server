@@ -9,7 +9,7 @@ import session from "express-session"
 import cors from "cors"
 import { createConnection } from "typeorm"
 import path from "path"
-//import { Pool } from "pg"
+import { Pool } from "pg"
 import { COOKIE_NAME, __prod__ } from "./constants"
 import { HelloResolver } from "./resolvers/hello"
 import { PostResolver } from "./resolvers/post"
@@ -43,23 +43,15 @@ const main = async () => {
     entities: [Post, User, Vote],
   })
 
-  //connection.connect()
+  connection.connect()
 
-  const app = express()
-  app.options("*", cors())
-
-  // app.use((req, res, next) => {
-  //   res.header("Access-Control-Allow-Origin", "*")
-  //   res.header("Access-Control-Allow-Methods", "POST")
-  //   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-  //   next()
-  // })
-
-  const PORT = process.env.PORT || 4500,
+  const app = express(),
+    PORT = process.env.PORT || 4500,
     RedisStore = connectRedis(session),
     redis = new Redis(process.env.REDIS_URL)
 
   app.set("proxy", 1)
+  app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }))
 
   app.use(
     session({
@@ -96,6 +88,7 @@ const main = async () => {
 
   apolloServer.applyMiddleware({
     app,
+    cors: false,
   })
 
   app.listen(PORT, () => {
