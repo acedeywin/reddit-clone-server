@@ -6,10 +6,8 @@ import { buildSchema } from "type-graphql"
 import Redis from "ioredis"
 import connectRedis from "connect-redis"
 import session from "express-session"
-import cors from "cors"
 import { createConnection } from "typeorm"
 import path from "path"
-import { Pool } from "pg"
 import { COOKIE_NAME, __prod__ } from "./constants"
 import { HelloResolver } from "./resolvers/hello"
 import { PostResolver } from "./resolvers/post"
@@ -51,7 +49,6 @@ const main = async () => {
     redis = new Redis(process.env.REDIS_URL)
 
   app.set("proxy", 1)
-  app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }))
 
   app.use(
     session({
