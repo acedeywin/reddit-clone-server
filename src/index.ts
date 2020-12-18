@@ -46,7 +46,7 @@ const main = async () => {
   //connection.connect()
 
   const app = express()
-  app.use(cors())
+  app.options("*", cors())
 
   // app.use((req, res, next) => {
   //   res.header("Access-Control-Allow-Origin", "*")
@@ -96,7 +96,6 @@ const main = async () => {
 
   apolloServer.applyMiddleware({
     app,
-    cors: true,
   })
 
   app.listen(PORT, () => {
