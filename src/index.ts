@@ -43,15 +43,23 @@ const main = async () => {
     entities: [Post, User, Vote],
   })
 
-  connection.connect()
+  //connection.connect()
 
-  const app = express(),
-    PORT = process.env.PORT || 4500,
+  const app = express()
+  app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*")
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept"
+    )
+    next()
+  })
+
+  const PORT = process.env.PORT || 4500,
     RedisStore = connectRedis(session),
     redis = new Redis(process.env.REDIS_URL)
 
-  app.set("proxy", 1)
-  app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }))
+  //app.set("proxy", 1)
 
   app.use(
     session({
