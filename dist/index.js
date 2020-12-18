@@ -11,7 +11,6 @@ const type_graphql_1 = require("type-graphql");
 const ioredis_1 = __importDefault(require("ioredis"));
 const connect_redis_1 = __importDefault(require("connect-redis"));
 const express_session_1 = __importDefault(require("express-session"));
-const cors_1 = __importDefault(require("cors"));
 const typeorm_1 = require("typeorm");
 const path_1 = __importDefault(require("path"));
 const constants_1 = require("./constants");
@@ -32,10 +31,13 @@ const main = async () => {
         migrations: [path_1.default.join(__dirname, "./migrations/*")],
         entities: [Post_1.Post, User_1.User, Vote_1.Vote],
     });
-    connection.connect();
-    const app = express_1.default(), PORT = process.env.PORT || 4500, RedisStore = connect_redis_1.default(express_session_1.default), redis = new ioredis_1.default(process.env.REDIS_URL);
-    app.set("proxy", 1);
-    app.use(cors_1.default({ origin: process.env.CORS_ORIGIN, credentials: true }));
+    const app = express_1.default();
+    app.use((req, res, next) => {
+        res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        next();
+    });
+    const PORT = process.env.PORT || 4500, RedisStore = connect_redis_1.default(express_session_1.default), redis = new ioredis_1.default(process.env.REDIS_URL);
     app.use(express_session_1.default({
         name: constants_1.COOKIE_NAME,
         secret: process.env.SESSION_SECRET,
