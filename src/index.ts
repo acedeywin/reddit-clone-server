@@ -6,7 +6,7 @@ import { buildSchema } from "type-graphql"
 import Redis from "ioredis"
 import connectRedis from "connect-redis"
 import session from "express-session"
-//import cors from "cors"
+import cors from "cors"
 import { createConnection } from "typeorm"
 import path from "path"
 //import { Pool } from "pg"
@@ -45,13 +45,21 @@ const main = async () => {
 
   //connection.connect()
 
-  const app = express(),
-    PORT = process.env.PORT || 4500,
+  const app = express()
+  //app.use(cors())
+
+  app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*")
+    res.header("Access-Control-Allow-Methods", "POST")
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    next()
+  })
+
+  const PORT = process.env.PORT || 4500,
     RedisStore = connectRedis(session),
     redis = new Redis(process.env.REDIS_URL)
 
   app.set("proxy", 1)
-  //app.use(cors())
 
   app.use(
     session({
