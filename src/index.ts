@@ -46,20 +46,13 @@ const main = async () => {
   //connection.connect()
 
   const app = express()
-  app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*")
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept"
-    )
-    next()
-  })
 
   const PORT = process.env.PORT || 4500,
     RedisStore = connectRedis(session),
     redis = new Redis(process.env.REDIS_URL)
 
-  //app.set("proxy", 1)
+  app.set("proxy", 1)
+  app.use(cors({ origin: "http://localhost:3000", credentials: true }))
 
   app.use(
     session({

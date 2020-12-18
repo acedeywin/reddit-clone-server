@@ -6,12 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createUserLoader = void 0;
 const dataloader_1 = __importDefault(require("dataloader"));
 const User_1 = require("../entities/User");
-const createUserLoader = () => new dataloader_1.default(async (userIds) => {
+exports.createUserLoader = () => new dataloader_1.default(async (userIds) => {
     const users = await User_1.User.findByIds(userIds), userIdToUser = {};
     users.forEach(user => {
         userIdToUser[user.id] = user;
     });
     return userIds.map(userId => userIdToUser[userId]);
 });
-exports.createUserLoader = createUserLoader;
 //# sourceMappingURL=createLoader.js.map
