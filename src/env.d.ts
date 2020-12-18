@@ -1,8 +1,6 @@
 declare namespace NodeJS {
   export interface ProcessEnv {
-    DB: string;
-    DB_USERNAME: string;
-    DB_PASSWORD: string;
+    DATABASE_URL: string;
     REDIS_URL: string;
     SESSION_SECRET: string;
     CORS_ORIGIN: string;

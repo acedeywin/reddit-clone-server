@@ -27,13 +27,12 @@ dotenv_safe_1.default.config();
 const main = async () => {
     const connection = await typeorm_1.createConnection({
         type: "postgres",
-        username: process.env.DB_USERNAME,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB,
+        url: process.env.DATABASE_URL,
         logging: true,
         migrations: [path_1.default.join(__dirname, "./migrations/*")],
         entities: [Post_1.Post, User_1.User, Vote_1.Vote],
     });
+    connection.connect();
     const app = express_1.default(), PORT = process.env.PORT || 4500, RedisStore = connect_redis_1.default(express_session_1.default), redis = new ioredis_1.default(process.env.REDIS_URL);
     app.set("proxy", 1);
     app.use(cors_1.default({ origin: process.env.CORS_ORIGIN, credentials: true }));

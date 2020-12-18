@@ -9,7 +9,7 @@ import session from "express-session"
 import cors from "cors"
 import { createConnection } from "typeorm"
 import path from "path"
-
+import { Pool } from "pg"
 import { COOKIE_NAME, __prod__ } from "./constants"
 import { HelloResolver } from "./resolvers/hello"
 import { PostResolver } from "./resolvers/post"
@@ -23,16 +23,27 @@ import { createUserLoader } from "./utils/createLoader"
 dotenv.config()
 
 const main = async () => {
+  //   const connectionString = process.env.DATABASE_URL
+
+  //   const pool = new Pool({
+  //     connectionString: connectionString,
+  //     ssl: {
+  //       rejectUnauthorized: false,
+  //     },
+  //   })
+
+  //   pool.connect()
+
   const connection = await createConnection({
     type: "postgres",
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB,
+    url: process.env.DATABASE_URL,
     //synchronize: true,
     logging: true,
     migrations: [path.join(__dirname, "./migrations/*")],
     entities: [Post, User, Vote],
   })
+
+  connection.connect()
 
   const app = express(),
     PORT = process.env.PORT || 4500,
