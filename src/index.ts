@@ -6,7 +6,7 @@ import { buildSchema } from "type-graphql"
 import Redis from "ioredis"
 import connectRedis from "connect-redis"
 import session from "express-session"
-import cors from "cors"
+//import cors from "cors"
 import { createConnection } from "typeorm"
 import path from "path"
 //import { Pool } from "pg"
@@ -51,7 +51,7 @@ const main = async () => {
     redis = new Redis(process.env.REDIS_URL)
 
   app.set("proxy", 1)
-  app.use(cors())
+  //app.use(cors())
 
   app.use(
     session({
@@ -88,7 +88,7 @@ const main = async () => {
 
   apolloServer.applyMiddleware({
     app,
-    cors: false,
+    cors: true,
   })
 
   app.listen(PORT, () => {
