@@ -43,7 +43,7 @@ const main = async () => {
     entities: [Post, User, Vote],
   })
 
-  connection.connect()
+  //connection.connect()
 
   const app = express(),
     PORT = process.env.PORT || 4500,

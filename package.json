@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "engines": {
-    "node": "14.x"
+    "node": "14.x",
+    "yarn": "1.22.x"
   },
   "scripts": {
     "env": "gen-env-types .env -o src/env.d.ts -e .",
@@ -15,7 +16,8 @@
     "dev": "nodemon --exec ts-node src/index.ts",
     "watch": "tsc -w",
     "docker": "docker build -t acedeywin/redditclone:1 .",
-    "migration": "typeorm migration:generate -n maindbfile"
+    "migration": "typeorm migration:generate -n maindbfile",
+    "heroku-postbuild": "yarn install --production"
   },
   "keywords": [],
   "author": "",
