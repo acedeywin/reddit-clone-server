@@ -1,9 +1,16 @@
-import { EntityManager, IDatabaseDriver, Connection } from "@mikro-orm/core"
 import { InputType, Field, ObjectType } from "type-graphql"
+import { Request, Response } from "express"
 import { User } from "./entities/User"
+import { Redis } from "ioredis"
+import { createUserLoader } from "./utils/createLoader"
+//import session from "express-session"
 
 export type MyContext = {
-  em: EntityManager<any> & EntityManager<IDatabaseDriver<Connection>>
+  req: Request & { session: any }
+  res: Response
+  redis: Redis
+  userLoader: ReturnType<typeof createUserLoader>
+  //voteLoader: ReturnType<typeof createVoteLoader>
 }
 
 //creating your custom Arg
@@ -11,6 +18,8 @@ export type MyContext = {
 export class UsernamePasswordInput {
   @Field()
   username: string
+  @Field()
+  email: string
   @Field()
   password: string
 }
