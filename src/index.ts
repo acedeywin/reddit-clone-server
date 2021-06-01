@@ -1,4 +1,5 @@
 import "reflect-metadata"
+import dotenv from "dotenv-safe"
 import express from "express"
 import { ApolloServer } from "apollo-server-express"
 import { buildSchema } from "type-graphql"
@@ -8,9 +9,7 @@ import session from "express-session"
 import cors from "cors"
 import { createConnection } from "typeorm"
 import path from "path"
-// import KnexSessionStore from "connect-session-knex"
-// import Knex from "knex"
-
+import { Pool } from "pg"
 import { COOKIE_NAME, __prod__ } from "./constants"
 import { HelloResolver } from "./resolvers/hello"
 import { PostResolver } from "./resolvers/post"
@@ -19,67 +18,46 @@ import { User } from "./entities/User"
 import { Post } from "./entities/Post"
 import { VoteResolver } from "./resolvers/vote"
 import { Vote } from "./entities/Vote"
+import { createUserLoader } from "./utils/createLoader"
+
+dotenv.config()
 
 const main = async () => {
+  //   const connectionString = process.env.DATABASE_URL
+
+  //   const pool = new Pool({
+  //     connectionString: connectionString,
+  //     ssl: {
+  //       rejectUnauthorized: false,
+  //     },
+  //   })
+
+  //   pool.connect()
+
   const connection = await createConnection({
     type: "postgres",
-    username: "postgres",
-    password: "12345",
-    database: "redditdb2",
-    synchronize: true,
+    url: process.env.DATABASE_URL,
+    //synchronize: true,
     logging: true,
     migrations: [path.join(__dirname, "./migrations/*")],
     entities: [Post, User, Vote],
   })
 
-  //await Post.delete({})
+  //connection.connect()
 
-  //await connection.runMigrations()
+  const app = express()
 
-  const app = express(),
-    PORT = process.env.PORT || 4500,
-    // knexStore = KnexSessionStore(session)
-
+  const PORT = process.env.PORT || 4500,
     RedisStore = connectRedis(session),
-    redis = new Redis()
+    redis = new Redis(process.env.REDIS_URL)
 
+  app.set("proxy", 1)
   app.use(cors({ origin: "http://localhost:3000", credentials: true }))
-
-  // const knex = Knex({
-  //   client: "pg",
-  //   connection: {
-  //     host: "127.0.0.1",
-  //     user: "postgres",
-  //     password: "12345",
-  //     database: "redditdb",
-  //   },
-  // })
-
-  // const store = new knexStore({
-  //   knex,
-  //   tablename: "sessions",
-  // })
-
-  // app.use(
-  //   session({
-  //     name: COOKIE_NAME,
-  //     secret: "acedeywin12345@!",
-  //     cookie: {
-  //       maxAge: 1000 * 60 * 60 * 24 * 365 * 5, //5 years
-  //       httpOnly: true,
-  //       sameSite: "lax",
-  //       // secure: __prod__,
-  //     },
-  //     store,
-  //     saveUninitialized: false,
-  //     resave: false,
-  //   })
-  // )
 
   app.use(
     session({
       name: COOKIE_NAME,
-      secret: "acedeywin12345@!",
+      secret: process.env.SESSION_SECRET as string,
       store: new RedisStore({
         client: redis,
         ttl: 260,
@@ -89,6 +67,7 @@ const main = async () => {
         httpOnly: true,
         sameSite: "lax", //related to protecting its csrf
         //secure: __prod__, //cookie only work is https
+        //domain: __prod__ ? ".herokuapp.com" : undefined,
       },
       saveUninitialized: false,
       resave: false,
@@ -100,7 +79,12 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver, VoteResolver],
       validate: false,
     }),
-    context: ({ req, res }) => ({ req, res, redis }),
+    context: ({ req, res }) => ({
+      req,
+      res,
+      redis,
+      userLoader: createUserLoader(),
+    }),
   })
 
   apolloServer.applyMiddleware({

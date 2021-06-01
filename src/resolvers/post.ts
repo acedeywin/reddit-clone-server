@@ -16,6 +16,8 @@ import {
 import { MyContext } from "src/types"
 import { isAuth } from "../middleware/isAuth"
 import { getConnection } from "typeorm"
+import { Vote } from "../entities/Vote"
+import { User } from "../entities/User"
 
 @InputType()
 class PostInput {
@@ -41,6 +43,11 @@ export class PostResolver {
     return root.text.slice(0, 80)
   }
 
+  @FieldResolver(() => User)
+  creator(@Root() post: Post, @Ctx() { userLoader }: MyContext) {
+    return userLoader.load(post.creatorId)
+  }
+
   //query for getting all valid post
   @Query(() => PaginatedPosts)
   async posts(
@@ -51,7 +58,7 @@ export class PostResolver {
     const realLimit = Math.min(30, limit),
       realLimitPlusOne = realLimit + 1
 
-    const replacements: any[] = [realLimitPlusOne, req.session.userId]
+    const replacements: any[] = [realLimitPlusOne]
 
     if (cursor) {
       replacements.push(new Date(parseInt(cursor)))
@@ -59,23 +66,9 @@ export class PostResolver {
 
     const posts = await getConnection().query(
       `
-
-    select p.*,
-    json_build_object(
-      'id', u.id,
-      'username', u.username,
-      'email', u.email,
-      'createdAt', u."createdAt",
-      'updatedAt', u."updatedAt"
-    ) creator,
-    ${
-      req.session.userId
-        ? ' (select value from vote where "userId" = $2 and "postId" = p.id) "voteStatus"'
-        : "null as voteStatus"
-    }
+    select p.*
     from post p
 
-    inner join public.user u on u.id = p."creatorId"
     ${cursor ? `where p."createdAt" < $3` : ""}
     order by p."createdAt" DESC
     limit $1
@@ -83,20 +76,6 @@ export class PostResolver {
     `,
       replacements
     )
-
-    // const queryBuilder = getConnection()
-    //   .getRepository(Post)
-    //   .createQueryBuilder("p")
-    //   .innerJoinAndSelect("p.creator", "u", 'u.id = p."creatorId"')
-    //   .orderBy('"createdAt"', "DESC")
-    //   .take(realLimitPlusOne)
-
-    // if (cursor) {
-    //   queryBuilder.where('p."createdAt" < :cursor', {
-    //     cursor: new Date(parseInt(cursor)),
-    //   })
-    // }
-    // const posts = await queryBuilder.getMany()
 
     return {
       posts: posts.slice(0, realLimit),
@@ -122,23 +101,42 @@ export class PostResolver {
   }
   //mutation for updating a post
   @Mutation(() => Post, { nullable: true })
+  @UseMiddleware(isAuth)
   async updatePost(
-    @Arg("id") id: number,
-    @Arg("title", () => String, { nullable: true }) title: string
+    @Arg("id", () => Int) id: number,
+    @Arg("title") title: string,
+    @Arg("text") text: string,
+    @Ctx() { req }: MyContext
   ): Promise<Post | null> {
-    const post = await Post.findOne(id)
-    if (!post) {
-      return null
-    }
-    if (typeof title !== "undefined") {
-      await Post.update({ id }, { title })
-    }
-    return post
+    const post = await getConnection()
+      .createQueryBuilder()
+      .update(Post)
+      .set({ title, text })
+      .where('id = :id and "creatorId" = :creatorId', {
+        id,
+        creatorId: req.session.userId,
+      })
+      .returning("*")
+      .execute()
+
+    return post.raw[0]
   }
   //mutation for deleting a post
   @Mutation(() => Boolean)
-  async deletePost(@Arg("id") id: number): Promise<boolean> {
-    await Post.delete(id)
+  @UseMiddleware(isAuth)
+  async deletePost(
+    @Arg("id", () => Int) id: number,
+    @Ctx() { req }: MyContext
+  ): Promise<boolean> {
+    const post = await Post.findOne(id)
+    if (!post) {
+      return false
+    }
+    if (post.creatorId !== req.session.userId) {
+      throw new Error("Your are not authorized to delete this post")
+    }
+    await Vote.delete({ postId: id })
+    await Post.delete({ id })
     return true
   }
 }

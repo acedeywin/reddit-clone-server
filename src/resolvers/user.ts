@@ -129,7 +129,7 @@ export class UserResolver {
 
     await sendEmail(
       email,
-      `<a href="http://localhost:3000/change-password/${token}">reset password</a>`
+      `<a href="${process.env.SEND_EMAIL}/change-password/${token}">reset password</a>`
     )
     return true
   }
@@ -164,12 +164,21 @@ export class UserResolver {
       user = result.raw[0]
     } catch (err) {
       //err.detail.includes("already exists")
-      if (err.code === "23505") {
+      if (err.detail.includes("username")) {
         return {
           errors: [
             {
               field: "username",
               message: `The username is already taken`,
+            },
+          ],
+        }
+      } else if (err.detail.includes("email")) {
+        return {
+          errors: [
+            {
+              field: "email",
+              message: `The email is already taken`,
             },
           ],
         }

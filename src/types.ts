@@ -2,18 +2,16 @@ import { InputType, Field, ObjectType } from "type-graphql"
 import { Request, Response } from "express"
 import { User } from "./entities/User"
 import { Redis } from "ioredis"
+import { createUserLoader } from "./utils/createLoader"
 //import session from "express-session"
 
 export type MyContext = {
   req: Request & { session: any }
   res: Response
   redis: Redis
+  userLoader: ReturnType<typeof createUserLoader>
+  //voteLoader: ReturnType<typeof createVoteLoader>
 }
-
-// export type SessionUserid = {
-//   session: session.Session & Partial<session.SessionData> & e.Express
-//   userId: Session & Partial<SessionData>
-// }
 
 //creating your custom Arg
 @InputType()

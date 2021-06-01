@@ -26,7 +26,7 @@ export class VoteResolver {
           [realValue, postId, userId]
         )
         await tm.query(`update post set points = points + $1 where id = $2`, [
-          2 * realValue,
+          1 * realValue,
           postId,
         ])
       })
