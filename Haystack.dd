@@ -1,0 +1,2 @@
+Currently the list of categories as seen in the dropdown is hardcoded in the project. For this task, the list needs to be coming from the database not hardcoded. 
+We have an endpoint that returns all categories please peruse the frontend code and inform Gbenga Omowole Samson what you need returned from that endpoint
